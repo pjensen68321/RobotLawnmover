@@ -19,7 +19,7 @@ class GpioTogglePin():
 			GPIO.output(self.pin, self.state)
 
 class SingleMotorController():
-	def __init__(self, pwm_pin, n1_pin, n2_pin, tick_pin, m_pr_tick, pwm_speed=100,control_loop_hz=100):
+	def __init__(self, pwm_pin, n1_pin, n2_pin, tick_pin, m_pr_tick, pwm_speed=100,control_loop_hz=100.0):
 		# pins
 		self.pwm_pin = pwm_pin
 		self.n1_pin = n1_pin
@@ -35,9 +35,10 @@ class SingleMotorController():
 
 		# variables
 		self.last_tick = 0
-		self.set_speed = 0
+		self._set_speed = 0
 		self.speed = 0
 		self.direction = 0
+		self.p_reg = 0
 		self.i_reg = 0
 		self.last_pwm = 0
 
@@ -52,7 +53,7 @@ class SingleMotorController():
 
 		GPIO.add_event_detect(self.tick_pin, GPIO.FALLING, callback=self.tick_callback,bouncetime=1)
 
-		rospy.Timer(rospy.Duration(1/self.control_loop_hz), self.control_loop)
+		rospy.Timer(rospy.Duration(1.0/self.control_loop_hz), self.control_loop)
 		rospy.Timer(rospy.Duration(0.1), self.speed_resetter)
 
 	def speed_resetter(self,event):
@@ -72,13 +73,13 @@ class SingleMotorController():
 		pass
 
 	def control_loop(self,event):
-		diff = self.set_speed - self.speed
-		p = diff * self.p_gain
+		diff = self._set_speed - self.speed
+		self.p_reg = diff * self.p_gain
 		self.i_reg += diff * self.i_gain
 
-		reg = p + i
+		reg = self.p_reg + self.i_reg
 		self.last_pwm = reg
-		print self.last_pwm
+		print "pwm",self.last_pwm
 		#self.pwm.ChangeDutyCycle(reg)
 		#self.set_direction_pins(reg)
 
@@ -94,7 +95,7 @@ class SingleMotorController():
 			self.N2.set_state( GPIO.LOW )
 		
 	def set_speed(self,speed):
-		self.set_speed = speed
+		self._set_speed = speed
 
 class DifferentialDriveMotorController():
 	def __init__(self, left_motor, right_motor, wheel_distance):
@@ -105,7 +106,10 @@ class DifferentialDriveMotorController():
 		rospy.Subscriber("cmd_vel", Twist, self.got_twist)
 
 	def got_twist(self,msg):
-		print msg
+		forward = msg.linear.x
+		turn = msg.angular.z
+		self.left_motor.set_speed(forward)
+                #print forward,turn
 
 
 class MotorControllerNode():
