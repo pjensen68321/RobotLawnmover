@@ -30,17 +30,18 @@ class SingleMotorController():
 		self.control_loop_hz = control_loop_hz
 		self.m_pr_tick = m_pr_tick
 
-		self.p_gain = 1
-		self.i_gain = 0
+		self.p_gain = 1.0
+		self.i_gain = 0.0
 
 		# variables
-		self.last_tick = 0
-		self._set_speed = 0
-		self.speed = 0
-		self.direction = 0
-		self.p_reg = 0
-		self.i_reg = 0
-		self.last_pwm = 0
+		self.last_tick = 0.0
+		self._set_speed = 0.0
+		self.speed = 0.0
+		self.direction = 0.0
+		self.p_reg = 0.0
+		self.i_reg = 0.0
+		self.last_pwm = 0.0
+		self.got_tick = False
 
 		# Pin setup
 		self.N1 = GpioTogglePin(self.n1_pin)
@@ -58,14 +59,14 @@ class SingleMotorController():
 
 	def speed_resetter(self,event):
 		if not self.got_tick:
-			self.speed = 0
-		self.got_tick = 0
+			self.speed = 0.0
+		self.got_tick = False
 
 	def tick_callback(self,channel):
 		new_time = rospy.get_rostime()
-		self.got_tick = 1
+		self.got_tick = True
 		elapsed = self.new_time - self.last_tick
-		hz = (1/elapsed.to_sec())/self.ticks_pr_round
+		hz = (1.0/elapsed.to_sec())/self.ticks_pr_round
 		self.speed = self.m_pr_tick*hz
 		self.last_tick = new_time
 
@@ -84,13 +85,13 @@ class SingleMotorController():
 		#self.set_direction_pins(reg)
 
 	def set_direction_pins(self,direction):
-		if direction == 0:
+		if direction == 0.0:
 			self.N1.set_state( GPIO.LOW )
 			self.N2.set_state( GPIO.LOW )
-		if direction > 0:
+		if direction > 0.0:
 			self.N1.set_state( GPIO.LOW )
 			self.N2.set_state( GPIO.HIGH )
-		if direction < 0:
+		if direction < 0.0:
 			self.N1.set_state( GPIO.HIGH )
 			self.N2.set_state( GPIO.LOW )
 		
@@ -120,9 +121,9 @@ class MotorControllerNode():
 
 
 		wheel_radius = 0.1
-		ticks_pr_round = 2
-		gear = 50
-		wheel_circumference = 2 * math.pi * wheel_radius * gear
+		ticks_pr_round = 2.0
+		gear = 50.0
+		wheel_circumference = 2.0 * math.pi * wheel_radius * gear
 		m_pr_tick = wheel_circumference/ticks_pr_round
 
 		left_motor = SingleMotorController( 238, 185, 224, 168, m_pr_tick )
