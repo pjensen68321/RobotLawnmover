@@ -84,7 +84,6 @@ class SingleMotorController():
 
 		reg = 0.0
 		self.last_pwm = reg
-		print "pwm",self.last_pwm
 		self.pwm.ChangeDutyCycle(0)
 		self.set_direction_pins(reg)
 

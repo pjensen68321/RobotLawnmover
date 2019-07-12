@@ -6,7 +6,7 @@ import math
 
 from geometry_msgs.msg import Twist
 
-def limit(val,max=100.0,min=-100.0):
+def limit(val,max=30.0,min=-30.0):
 	if val > max:
 		val = max
         if val < min:
@@ -37,8 +37,8 @@ class SingleMotorController():
 		self.control_loop_hz = control_loop_hz
 		self.m_pr_tick = m_pr_tick
 
-		self.p_gain = 10.0
-		self.i_gain = 0.0
+		self.p_gain = 0
+		self.i_gain = 0.01
 
 		# variables
 		self.last_tick = rospy.get_rostime()
@@ -49,6 +49,7 @@ class SingleMotorController():
 		self.i_reg = 0.0
 		self.last_pwm = 0.0
 		self.got_tick = False
+		self.direction = 0
 
 		# Pin setup
 		self.N1 = GpioTogglePin(self.n1_pin)
@@ -73,29 +74,39 @@ class SingleMotorController():
 		new_time = rospy.get_rostime()
 		self.got_tick = True
 		elapsed = new_time - self.last_tick
-		self.speed = self.m_pr_tick/elapsed.to_sec()
+		self.speed = (self.m_pr_tick*elapsed.to_sec())*self.direction
 		self.last_tick = new_time
 
 	def control_loop(self,event):
 		diff = self._set_speed - self.speed
+		if self._set_speed == 0.0:
+			diff = 0
+			self.i_reg = 0
 		self.p_reg = diff * self.p_gain
 		self.i_reg += diff * self.i_gain
 		self.i_reg = limit(self.i_reg)
 
 		reg = self.p_reg + self.i_reg
-		self.last_pwm = reg
-		print "pwm",self.last_pwm
-		self.pwm.ChangeDutyCycle(limit(math.fabs(reg)))
-		self.set_direction_pins(reg)
+		self.last_pwm = limit( math.fabs(reg) )
+		if self.last_pwm < 1.0:
+			self.last_pwm = 0
+		self.pwm.ChangeDutyCycle( self.last_pwm )
+		self.set_direction_pins( reg )
+		
+		print reg,self.p_reg,self.i_reg
+		print "speed",self._set_speed,self.speed,self.direction
 
 	def set_direction_pins(self,direction):
 		if direction == 0.0:
+			self.direction = 0
 			self.N1.set_state( GPIO.LOW )
 			self.N2.set_state( GPIO.LOW )
 		if direction > 0.0:
+			self.direction = 1
 			self.N1.set_state( GPIO.LOW )
 			self.N2.set_state( GPIO.HIGH )
 		if direction < 0.0:
+			self.direction = -1
 			self.N1.set_state( GPIO.HIGH )
 			self.N2.set_state( GPIO.LOW )
 		
@@ -126,9 +137,10 @@ class MotorControllerNode():
 
 		wheel_radius = 0.1
 		ticks_pr_round = 2.0
-		gear = 50.0
-		wheel_circumference = 2.0 * math.pi * wheel_radius * gear
-		m_pr_tick = wheel_circumference/ticks_pr_round
+		gear = 0.001
+		wheel_circumference = 2.0 * math.pi * wheel_radius
+		m_pr_tick = wheel_circumference/(ticks_pr_round * gear)
+		m_pr_tick = 10000.0
 
 		left_motor = SingleMotorController( 238, 185, 224, 168, m_pr_tick )
 		right_motor = None #SingleMotorController( 239, 223, 187, 188, m_pr_tick )
