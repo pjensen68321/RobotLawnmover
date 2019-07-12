@@ -82,10 +82,10 @@ class SingleMotorController():
 		self.i_reg += diff * self.i_gain
 		self.i_reg = limit(self.i_reg)
 
-		reg = self.p_reg + self.i_reg
+		reg = 0.0
 		self.last_pwm = reg
 		print "pwm",self.last_pwm
-		self.pwm.ChangeDutyCycle(limit(math.fabs(reg)))
+		self.pwm.ChangeDutyCycle(0)
 		self.set_direction_pins(reg)
 
 	def set_direction_pins(self,direction):
