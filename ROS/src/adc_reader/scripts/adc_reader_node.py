@@ -21,6 +21,14 @@ class AdcNode():
 		GPIO.setup(self.rdy_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 		GPIO.add_event_detect(self.rdy_pin, GPIO.FALLING, callback=self.reading_ready,bouncetime=1)
 		self.waiting_for_ready = False
+
+		# Setup adc hi/low tresh to use for conversion ready signal
+		for ind in inputs:
+			adr = ind[0]
+			bus.write_i2c_block_data(adr, 0x02, [0b00000000,0b00000000])
+			bus.write_i2c_block_data(adr, 0x03, [0b10000000,0b00000000])
+
+		rospy.sleep(0.1)
 		self.get_next_reading()
 
 
@@ -34,6 +42,8 @@ class AdcNode():
 
 			self.waiting_for_ready = False
 			self.get_next_reading()
+		else:
+			print "got conversion ready but did not expext one"
 
 	def get_next_reading(self):
 		ind = self.inputs[self.current_input]

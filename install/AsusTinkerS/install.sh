@@ -16,7 +16,7 @@ echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 
 # Install dependencies
-sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential python-dev -Y
+sudo apt install python-rosinstall python-rosinstall-generator python-wstool build-essential python-dev python-pip -Y
 
 # install GPIO
 git clone http://github.com/TinkerBoard/gpio_lib_python --depth 1 GPIO_API_for_Python
@@ -29,7 +29,8 @@ cd GPIO_API_for_C/
 sudo chmod +x build
 sudo ./build
 
-
+# install i2c smbus
+sudo pip install smbus
 
 # Setup robot code
 cd RobotLawnmover/ROS
