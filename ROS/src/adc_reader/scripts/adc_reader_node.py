@@ -31,13 +31,17 @@ class AdcNode():
 		rospy.sleep(0.1)
 		self.get_next_reading()
 
-
+	def read_word(self,address,reg):
+	    h = bus.read_byte_data(address, reg)
+	    l = bus.read_byte_data(address, reg+1)
+	    value = (h << 8) + l
+	    return value
 	def reading_ready(self, channel):
 		t = rospy.get_rostime()
 		if self.waiting_for_ready:
 			print "reading ready"
 			adr = self.inputs[self.current_input][0]
-			self.last_val = read_word(adr,0x00)
+			self.last_val = self.read_word(adr,0x00)
 			print "value is",self.last_val
 
 			self.waiting_for_ready = False
