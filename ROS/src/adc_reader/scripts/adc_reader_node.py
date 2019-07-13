@@ -45,6 +45,9 @@ class AdcNode():
 			print "value is",self.last_val
 
 			self.waiting_for_ready = False
+			self.current_input += 1
+			if self.current_input >= len(self.inputs):
+				self.current_input = 0
 			self.get_next_reading()
 		else:
 			print "got conversion ready but did not expext one"
@@ -59,5 +62,5 @@ class AdcNode():
 		self.waiting_for_ready = True
 		bus.write_i2c_block_data(adr, 0x01, [c_h,c_l])
 
-a = AdcNode()
+a = AdcNode(inputs)
 rospy.spin()
